@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: artist_search_django
+    command: gunicorn --bind 0.0.0.0:8000 allevents_backend.wsgi:application
+    user: "root" 
+    volumes:
+      - .:/app
+      - media_volume:/app/media 
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - elastic
+      - db_network
+    env_file:
+      - allevents_backend/.env
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/postgres
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - MUSICBRAINZ_ACC_EMAIL=${MUSICBRAINZ_ACC_EMAIL}
+      - LASTFM_API_KEY=${LASTFM_API_KEY}
+    restart: on-failure
+
+  db:
+    image: postgres:14
+    container_name: artist_search_postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - db_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: artist_search_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - elastic
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q 'status.*[green|yellow]'"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    command: >
+      bash -c "bin/elasticsearch-plugin list | grep -q analysis-phonetic || bin/elasticsearch-plugin install analysis-phonetic && elasticsearch"
+
+networks:
+  elastic:
+    driver: bridge
+  db_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  elasticsearch_data:
+  media_volume:

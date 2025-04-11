@@ -1,0 +1,27 @@
+# Environment variables
+.env
+
+# Python-related ignores
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+/.env/
+/env/
+server/env
+server/allevents_backend/allevents_backend/__pycache__/
+server/allevents_backend/artists/__pycache__/
+
+
+# Logs and databases
+*.log
+db.sqlite3
+
+# Static and media files
+/staticfiles/
+/media/
+
+# IDE and system files
+.cache/
+.vscode/
