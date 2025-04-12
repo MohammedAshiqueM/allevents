@@ -16,8 +16,8 @@ class Command(BaseCommand):
         download_images = options['download_images']
         
         # Distribute the limit to MusicBrainz and Last.fm
-        musicbrainz_limit = min(limit, 100)  # MusicBrainz
-        lastfm_limit = min(limit - musicbrainz_limit, 100)  # Last.fm
+        musicbrainz_limit = min(limit, 50)  # MusicBrainz
+        lastfm_limit = min(limit - musicbrainz_limit, 50)  # Last.fm
         
         # Import from MusicBrainz
         self.stdout.write(self.style.NOTICE("Starting MusicBrainz imports..."))
